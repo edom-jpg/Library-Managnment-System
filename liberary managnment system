@@ -1,0 +1,189 @@
+#include <iostream>
+#include <fstream>
+#include <vector>
+#include <iomanip>
+#include <string>
+using namespace std;
+
+struct Book {
+    int id;
+    string title;
+    string author;
+    bool issued;
+};
+
+// Function declarations
+void addBook();
+void displayBooks();
+void searchBook();
+void issueBook();
+void returnBook();
+
+vector<Book> loadBooks() {
+    vector<Book> books;
+    ifstream file("books.dat", ios::binary);
+    if (!file) return books;
+
+    Book b;
+    while (file.read((char*)&b, sizeof(b))) {
+        books.push_back(b);
+    }
+    file.close();
+    return books;
+}
+
+void saveBooks(vector<Book> &books) {
+    ofstream file("books.dat", ios::binary | ios::trunc);
+    for (Book &b : books) {
+        file.write((char*)&b, sizeof(b));
+    }
+    file.close();
+}
+
+void addBook() {
+    vector<Book> books = loadBooks();
+    Book b;
+    cout << "Enter book ID: ";
+    cin >> b.id;
+    cin.ignore();
+    cout << "Enter book title: ";
+    getline(cin, b.title);
+    cout << "Enter author name: ";
+    getline(cin, b.author);
+    b.issued = false;
+
+    books.push_back(b);
+    saveBooks(books);
+
+    cout << "Book added successfully!\n";
+}
+
+void displayBooks() {
+    vector<Book> books = loadBooks();
+    cout << left << setw(5) << "ID" 
+         << setw(30) << "Title" 
+         << setw(20) << "Author" 
+         << setw(10) << "Status" << endl;
+    cout << "-------------------------------------------------------------\n";
+
+    for (Book &b : books) {
+        cout << setw(5) << b.id
+             << setw(30) << b.title
+             << setw(20) << b.author
+             << setw(10) << (b.issued ? "Issued" : "Available") << endl;
+    }
+}
+
+void searchBook() {
+    vector<Book> books = loadBooks();
+    int choice;
+    cout << "Search by: 1. ID  2. Title\nChoice: ";
+    cin >> choice;
+    cin.ignore();
+
+    if (choice == 1) {
+        int id;
+        cout << "Enter book ID: ";
+        cin >> id;
+        bool found = false;
+        for (Book &b : books) {
+            if (b.id == id) {
+                cout << "Book found: " << b.title << " by " << b.author 
+                     << " [" << (b.issued ? "Issued" : "Available") << "]\n";
+                found = true;
+                break;
+            }
+        }
+        if (!found) cout << "Book not found.\n";
+    } else if (choice == 2) {
+        string title;
+        cout << "Enter book title: ";
+        getline(cin, title);
+        bool found = false;
+        for (Book &b : books) {
+            if (b.title == title) {
+                cout << "Book found: ID " << b.id << " by " << b.author 
+                     << " [" << (b.issued ? "Issued" : "Available") << "]\n";
+                found = true;
+            }
+        }
+        if (!found) cout << "Book not found.\n";
+    } else {
+        cout << "Invalid choice.\n";
+    }
+}
+
+void issueBook() {
+    vector<Book> books = loadBooks();
+    int id;
+    cout << "Enter book ID to issue: ";
+    cin >> id;
+    bool found = false;
+
+    for (Book &b : books) {
+        if (b.id == id) {
+            if (!b.issued) {
+                b.issued = true;
+                cout << "Book issued successfully.\n";
+            } else {
+                cout << "Book is already issued.\n";
+            }
+            found = true;
+            break;
+        }
+    }
+
+    if (!found) cout << "Book not found.\n";
+    saveBooks(books);
+}
+
+void returnBook() {
+    vector<Book> books = loadBooks();
+    int id;
+    cout << "Enter book ID to return: ";
+    cin >> id;
+    bool found = false;
+
+    for (Book &b : books) {
+        if (b.id == id) {
+            if (b.issued) {
+                b.issued = false;
+                cout << "Book returned successfully.\n";
+            } else {
+                cout << "Book was not issued.\n";
+            }
+            found = true;
+            break;
+        }
+    }
+
+    if (!found) cout << "Book not found.\n";
+    saveBooks(books);
+}
+
+int main() {
+    int choice;
+    do {
+        cout << "\n===== Library Management System =====\n";
+        cout << "1. Add Book\n";
+        cout << "2. Display All Books\n";
+        cout << "3. Search Book\n";
+        cout << "4. Issue Book\n";
+        cout << "5. Return Book\n";
+        cout << "6. Exit\n";
+        cout << "Enter your choice: ";
+        cin >> choice;
+
+        switch (choice) {
+            case 1: addBook(); break;
+            case 2: displayBooks(); break;
+            case 3: searchBook(); break;
+            case 4: issueBook(); break;
+            case 5: returnBook(); break;
+            case 6: cout << "Exiting...\n"; break;
+            default: cout << "Invalid choice!\n";
+        }
+    } while (choice != 6);
+
+    return 0;
+}
